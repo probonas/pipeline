@@ -521,6 +521,7 @@ class AddArtists(Configurable):
 				a_data = self.model_person_or_group(data, a_data, attribution_group_types, attribution_group_names, seq_no=seq_no, role='Artist', sales_record=sales_record)
 				person = get_crom_object(a_data)
 				mods = a_data['modifiers']
+				verbatim_mods = a_data.get('attrib_mod', '')
 				attrib_assignment_classes = [model.AttributeAssignment]
 				subprod_path = self.helper.make_uri_path(*a_data["uri_keys"])
 				subevent_id = event_uri + f'-{subprod_path}'
@@ -528,10 +529,12 @@ class AddArtists(Configurable):
 					if POSSIBLY.intersects(mods):
 						attrib_assignment_classes.append(vocab.PossibleAssignment)
 						assignment = vocab.make_multitype_obj(*attrib_assignment_classes, ident=attribute_assignment_id, label=f'Possibly attributed to {artist_label}')
+						assignment.used_specific_object = vocab.Note(ident='', content=verbatim_mods)
 						assignment._label = f'Possibly by {artist_label}'
 					else:
 						attrib_assignment_classes.append(vocab.ProbableAssignment)
 						assignment = vocab.make_multitype_obj(*attrib_assignment_classes, ident=attribute_assignment_id, label=f'Probably attributed to {artist_label}')
+						assignment.used_specific_object = vocab.Note(ident='', content=verbatim_mods)
 						assignment._label = f'Probably by {artist_label}'
 
 					# TODO: this assigns an uncertain carried_out_by property directly to the top-level production;
@@ -544,6 +547,7 @@ class AddArtists(Configurable):
 					if uncertain:
 						attrib_assignment_classes.append(vocab.PossibleAssignment)
 					assignment = vocab.make_multitype_obj(*attrib_assignment_classes, ident=attribute_assignment_id, label=f'Formerly attributed to {artist_label}')
+					assignment.used_specific_object = vocab.Note(ident='', content=verbatim_mods)
 					prod_event.attributed_by = assignment
 					assignment.assigned_property = 'carried_out_by'
 					assignment.assigned = person
@@ -553,6 +557,7 @@ class AddArtists(Configurable):
 					if uncertain:
 						attrib_assignment_classes.append(vocab.PossibleAssignment)
 						assignment = vocab.make_multitype_obj(*attrib_assignment_classes, ident=attribute_assignment_id, label=f'Possibly attributed to {artist_label}')
+						assignment.used_specific_object = vocab.Note(ident='', content=verbatim_mods)
 						prod_event.attributed_by = assignment
 						assignment.assigned_property = 'part'
 						assignment.assigned = subevent
@@ -609,9 +614,11 @@ class AddArtists(Configurable):
 					uncertain = True
 					attrib_assignment_classes.append(vocab.PossibleAssignment)
 			
+			verbatim_mods = a_data.get('attrib_mod', '')
 			if STYLE_OF.intersects(mods):
 				attribute_assignment_id = self.helper.prepend_uri_key(prod_event.id, f'ASSIGNMENT,NonArtist-{seq_no}')
 				assignment = vocab.make_multitype_obj(*attrib_assignment_classes, ident=attribute_assignment_id, label=f'In the style of {artist_label}')
+				assignment.used_specific_object = vocab.Note(ident='', content=verbatim_mods)
 				prod_event.attributed_by = assignment
 				assignment.assigned_property = 'influenced_by'
 				assignment.property_classified_as = vocab.instances['style of']
@@ -640,6 +647,7 @@ class AddArtists(Configurable):
 
 				if uncertain:
 					assignment = vocab.make_multitype_obj(*attrib_assignment_classes, ident=attribute_assignment_id, label=f'Possibly influenced by {person._label}')
+					assignment.used_specific_object = vocab.Note(ident='', content=verbatim_mods)
 					prod_event.attributed_by = assignment
 					assignment.assigned_property = 'influenced_by'
 					assignment.assigned = original_hmo
